@@ -90,25 +90,26 @@ RUN if [ "$TARGET" =  "x86_64" ]; then ARCH=64; else ARCH=32; fi && \
     sed -i -E "s/^prefix=.*$/prefix=\/opt\/glib/" /opt/glib/lib/pkgconfig/glib-2.0.pc
 
 WORKDIR /root
-RUN cd /root && \
-    wget https://sourceforge.net/projects/cwb/files/cwb/cwb-3.4-beta/cwb-3.4.22-source.tar.gz && \
-    tar xzfv cwb-3.4.22-source.tar.gz
-    
-WORKDIR /root/cwb-3.4.22
-RUN sed -i -E "s/^PLATFORM=.*$/PLATFORM=mingw-cross/" /root/cwb-3.4.22/config.mk && \
-    sed -i -E "s/^SITE=.*$/SITE=windows-release/" /root/cwb-3.4.22/config.mk && \
-    sed -i -E "s/#\s+CC\s*=\s*.*$/CC=$TARGET-w64-mingw32-gcc/" /root/cwb-3.4.22/config.mk && \
-    sed -i -E 's|#\s+(LIBPCRE_DLL_PATH)\s+=.*$|LIBPCRE_DLL_PATH=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/|g' /root/cwb-3.4.22/config.mk && \
-    sed -i -E "s|#\s+(LIBGLIB_DLL_PATH)\s+=.*$|LIBGLIB_DLL_PATH=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/|" /root/cwb-3.4.22/config.mk
+RUN mkdir cwb && \
+    cd cwb && \
+    svn checkout http://svn.code.sf.net/p/cwb/code/cwb/trunk && \
+    svn up -r1074 
 
-RUN sed -i -E "s/i586-mingw32msvc/$TARGET-w64-mingw32/g" /root/cwb-3.4.22/config/platform/mingw-cross && \
-    sed -i -E "s/i586/$TARGET/" /root/cwb-3.4.22/config/platform/mingw-cross
+WORKDIR /root/cwb/trunk
+RUN sed -i -E "s/^PLATFORM=.*$/PLATFORM=mingw-cross/" /root/cwb/trunk/config.mk && \
+    sed -i -E "s/^SITE=.*$/SITE=windows-release/" /root/cwb/trunk/config.mk && \
+    sed -i -E "s/#\s+CC\s*=\s*.*$/CC=$TARGET-w64-mingw32-gcc/" /root/cwb/trunk/config.mk && \
+    sed -i -E 's|#\s+(LIBPCRE_DLL_PATH)\s+=.*$|LIBPCRE_DLL_PATH=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/|g' /root/cwb/trunk/config.mk && \
+    sed -i -E "s|#\s+(LIBGLIB_DLL_PATH)\s+=.*$|LIBGLIB_DLL_PATH=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/|" /root/cwb/trunk/config.mk
 
-RUN sed -i -E "s/export\s*PKG_CONFIG_PATH=.+MINGW_CROSS_HOME.\/lib\/pkgconfig\s*;//g" /root/cwb-3.4.22/definitions.mk && \
-    sed -i -E "s/\s+\\$\\(MINGW_CROSS_HOME\\)\/bin\/pcre-config/ pcre-config/g" /root/cwb-3.4.22/definitions.mk
+RUN sed -i -E "s/i586-mingw32msvc/$TARGET-w64-mingw32/g" /root/cwb/trunk/config/platform/mingw-cross && \
+    sed -i -E "s/i586/$TARGET/" /root/cwb/trunk/config/platform/mingw-cross
+
+RUN sed -i -E "s/export\s*PKG_CONFIG_PATH=.+MINGW_CROSS_HOME.\/lib\/pkgconfig\s*;//g" /root/cwb/trunk/definitions.mk && \
+    sed -i -E "s/\s+\\$\\(MINGW_CROSS_HOME\\)\/bin\/pcre-config/ pcre-config/g" /root/cwb/trunk/definitions.mk
     
-RUN sed -i -E "s/^all\\:.*PROGRAMS.$/all: libcqp\\.a/g" /root/cwb-3.4.22/cqp/Makefile && \
-    printf '\nlibcqp.a: $(OBJS) $(CQI_OBJS)\n\t$(RM) $@\n\t$(AR) $@ $^\n' >> /root/cwb-3.4.22/cqp/Makefile
+RUN sed -i -E "s/^all\\:.*PROGRAMS.$/all: libcqp\\.a/g" /root/cwb/trunk/cqp/Makefile && \
+    printf '\nlibcqp.a: $(OBJS) $(CQI_OBJS)\n\t$(RM) $@\n\t$(AR) $@ $^\n' >> /root/cwb/trunk/cqp/Makefile
 
 ENV PKG_CONFIG_PATH=/opt/glib/lib/pkgconfig  
 RUN export PKG_CONFIG_PATH=/opt/glib/lib/pkgconfig && \
@@ -138,7 +139,7 @@ RUN cd /root && \
     git checkout dev
 
 CMD if [ "$TARGET" =  "x86_64" ]; then export ARCHDIR=x64; else export ARCHDIR=i386; fi && \
-    cp /root/cwb-3.4.22/cl/libcl.a /libcl/lib/$ARCHDIR/libcl.a &&                         \
-    cp /root/cwb-3.4.22/cqp/libcqp.a /libcl/lib/$ARCHDIR/libcqp.a &&                      \
+    cp /root/cwb/trunk/cl/libcl.a /libcl/lib/$ARCHDIR/libcl.a &&                         \
+    cp /root/cwb/trunk/cqp/libcqp.a /libcl/lib/$ARCHDIR/libcqp.a &&                      \
     cp /root/RcppCWB/src/cwb/utils/libcwb.a /libcl/lib/$ARCHDIR/libcwb.a
 
