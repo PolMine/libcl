@@ -1,4 +1,4 @@
-FROM debian:latest
+FROM ubuntu:trusty
 
 RUN apt-get update &&                                                              \
     apt-get -y upgrade &&                                                          \
