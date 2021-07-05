@@ -23,7 +23,10 @@ RUN tar xf pcre-$PCRE_VERSION.tar.gz &&                                         
     tar xf gettext-$GETTEXT_VERSION.tar.gz &&                                      \
     tar xf libffi-$LIBFFI_VERSION.tar.gz 
 
-ARG TARGET=i686 # or x86_64 
+ARG TARGET=x86_64 # or i686
+# Use this snippet:
+# MINGW_OUTPUT_TMP=`x86_64-w64-mingw32-gcc --print-search-dirs | grep ^install`; echo ${MINGW_OUTPUT_TMP:9}
+ARG MINGWDIR=/usr/lib/gcc/x86_64-w64-mingw32/4.8/
   
 RUN cd /root/pcre-$PCRE_VERSION &&                                              \
     CC=$TARGET-w64-mingw32-gcc CC_FOR_BUILD=gcc  ./configure                    \
@@ -31,29 +34,29 @@ RUN cd /root/pcre-$PCRE_VERSION &&                                              
       --enable-utf8 --enable-unicode-properties --enable-jit                    \
       --enable-newline-is-any --disable-cpp --enable-static                     \
       --disable-dependency-tracking                                             \
-      --prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                          \
-      --exec-prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                     \
-      --libdir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//lib                      \
-      --oldincludedir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//include &&        \
+      --prefix=$MINGWDIR                          \
+      --exec-prefix=$MINGWDIR                     \
+      --libdir=$MINGWDIR                    \
+      --oldincludedir=$MINGWDIR/include &&        \
     make && make install && make clean
 
 RUN cd /root/libiconv-$ICONV_VERSION &&                                         \
     CC=$TARGET-w64-mingw32-gcc CC_FOR_BUILD=gcc ./configure                     \
       --host=$TARGET-w64-mingw32                                                \
       --enable-static                                                           \
-      --prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                          \
-      --exec-prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                     \
-      --libdir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//lib                      \
-      --oldincludedir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//include &&        \
+      --prefix=$MINGWDIR                          \
+      --exec-prefix=$MINGWDIR                     \
+      --libdir=$MINGWDIR                      \
+      --oldincludedir=$MINGWDIR/include &&        \
     make && make install && make clean
     
 RUN cd /root/expat-$EXPAT_VERSION &&                                            \
     CC=$TARGET-w64-mingw32-gcc CC_FOR_BUILD=gcc ./configure                     \
       --host=$TARGET-w64-mingw32                                                \
-      --prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                          \
-      --exec-prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                     \
-      --libdir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//lib                      \
-      --oldincludedir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//include &&        \
+      --prefix=$MINGWDIR                          \
+      --exec-prefix=$MINGWDIR                     \
+      --libdir=$MINGWDIR                      \
+      --oldincludedir=$MINGWDIR/include &&        \
     make && make install && make clean
 
 RUN cd /root/gettext-$GETTEXT_VERSION &&                                        \
@@ -61,10 +64,10 @@ RUN cd /root/gettext-$GETTEXT_VERSION &&                                        
       --enable-static                                                           \
       --disable-threads                                                         \
       --host=$TARGET-w64-mingw32                                                \
-      --prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                          \
-      --exec-prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                     \
-      --libdir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//lib                      \
-      --oldincludedir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//include &&        \
+      --prefix=$MINGWDIR                          \
+      --exec-prefix=$MINGWDIR                     \
+      --libdir=$MINGWDIR                      \
+      --oldincludedir=$MINGWDIR/include &&        \
       make && make install && make clean; exit 0
 
 RUN cd /root/libffi-$LIBFFI_VERSION &&                                          \ 
@@ -73,10 +76,10 @@ RUN cd /root/libffi-$LIBFFI_VERSION &&                                          
     CC=$TARGET-w64-mingw32-gcc CC_FOR_BUILD=gcc                                 \
     ./configure                                                                 \
     --host=$TARGET-w64-mingw32                                                  \
-    --prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                            \
-    --exec-prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                       \
-    --libdir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//lib                        \
-    --oldincludedir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//include &&          \
+    --prefix=$MINGWDIR                            \
+    --exec-prefix=$MINGWDIR                       \
+    --libdir=$MINGWDIR                        \
+    --oldincludedir=$MINGWDIR/include &&          \
     make && make install && make clean
 
 
@@ -99,8 +102,8 @@ WORKDIR /root/cwb/trunk
 RUN sed -i -E "s/^PLATFORM=.*$/PLATFORM=mingw-cross/" /root/cwb/trunk/config.mk && \
     sed -i -E "s/^SITE=.*$/SITE=windows-release/" /root/cwb/trunk/config.mk && \
     sed -i -E "s/#\s+CC\s*=\s*.*$/CC=$TARGET-w64-mingw32-gcc/" /root/cwb/trunk/config.mk && \
-    sed -i -E 's|#\s+(LIBPCRE_DLL_PATH)\s+=.*$|LIBPCRE_DLL_PATH=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/|g' /root/cwb/trunk/config.mk && \
-    sed -i -E "s|#\s+(LIBGLIB_DLL_PATH)\s+=.*$|LIBGLIB_DLL_PATH=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/|" /root/cwb/trunk/config.mk
+    sed -i -E 's|#\s+(LIBPCRE_DLL_PATH)\s+=.*$|LIBPCRE_DLL_PATH=$MINGWDIR/|g' /root/cwb/trunk/config.mk && \
+    sed -i -E "s|#\s+(LIBGLIB_DLL_PATH)\s+=.*$|LIBGLIB_DLL_PATH=$MINGWDIR/|g" /root/cwb/trunk/config.mk
 
 RUN sed -i -E "s/i586-mingw32msvc/$TARGET-w64-mingw32/g" /root/cwb/trunk/config/platform/mingw-cross && \
     sed -i -E "s/i586/$TARGET/" /root/cwb/trunk/config/platform/mingw-cross
@@ -113,7 +116,7 @@ RUN sed -i -E "s/^all\\:.*PROGRAMS.$/all: libcqp\\.a/g" /root/cwb/trunk/cqp/Make
 
 ENV PKG_CONFIG_PATH=/opt/glib/lib/pkgconfig  
 RUN export PKG_CONFIG_PATH=/opt/glib/lib/pkgconfig && \
-    export PATH=$PATH:/usr/lib/gcc/$TARGET-mingw32/8.3-win32/bin/ && \
+    export PATH=$PATH:$MINGWDIR/bin/ && \
     make clean && make depend && make cqp && make cl
 
 
