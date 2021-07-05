@@ -1,7 +1,3 @@
-# Intended usage:
-# docker build -t cwbcross:latest --build-arg TARGET=x86_64 .
-# docker run -it --rm -v ~/Lab/github/libcl:/libcl cwbcross:latest
-
 FROM debian:latest
 
 RUN apt-get update &&                                                              \
