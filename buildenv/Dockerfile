@@ -23,9 +23,19 @@ RUN tar xf pcre-$PCRE_VERSION.tar.gz &&                                         
     tar xf gettext-$GETTEXT_VERSION.tar.gz &&                                      \
     tar xf libffi-$LIBFFI_VERSION.tar.gz 
 
+RUN cd /root && \
+    mkdir cwb && \
+    cd cwb && \
+    svn checkout http://svn.code.sf.net/p/cwb/code/cwb/trunk; exit 0
+RUN cd /root/cwb/trunk && \
+    svn cleanup && \
+    svn up 
+RUN cd /root/cwb/trunk && \
+    svn cleanup && \
+    svn up -r1074 
+
 ARG TARGET=x86_64 # or i686
-# Use this snippet:
-# MINGW_OUTPUT_TMP=`x86_64-w64-mingw32-gcc --print-search-dirs | grep ^install`; echo ${MINGW_OUTPUT_TMP:9}
+# Snippet: MINGW_OUTPUT_TMP=`x86_64-w64-mingw32-gcc --print-search-dirs | grep ^install`; echo ${MINGW_OUTPUT_TMP:9}
 ARG MINGWDIR=/usr/lib/gcc/x86_64-w64-mingw32/4.8/
   
 RUN cd /root/pcre-$PCRE_VERSION &&                                              \
@@ -92,12 +102,6 @@ RUN if [ "$TARGET" =  "x86_64" ]; then ARCH=64; else ARCH=32; fi && \
     rm glib-dev_2.26.0-1_win$ARCH.zip && \
     sed -i -E "s/^prefix=.*$/prefix=\/opt\/glib/" /opt/glib/lib/pkgconfig/glib-2.0.pc
 
-WORKDIR /root
-RUN mkdir cwb && \
-    cd cwb && \
-    svn checkout http://svn.code.sf.net/p/cwb/code/cwb/trunk && \
-    svn up -r1074 
-
 WORKDIR /root/cwb/trunk
 RUN sed -i -E "s/^PLATFORM=.*$/PLATFORM=mingw-cross/" /root/cwb/trunk/config.mk && \
     sed -i -E "s/^SITE=.*$/SITE=windows-release/" /root/cwb/trunk/config.mk && \
@@ -109,7 +113,8 @@ RUN sed -i -E "s/i586-mingw32msvc/$TARGET-w64-mingw32/g" /root/cwb/trunk/config/
     sed -i -E "s/i586/$TARGET/" /root/cwb/trunk/config/platform/mingw-cross
 
 RUN sed -i -E "s/export\s*PKG_CONFIG_PATH=.+MINGW_CROSS_HOME.\/lib\/pkgconfig\s*;//g" /root/cwb/trunk/definitions.mk && \
-    sed -i -E "s/\s+\\$\\(MINGW_CROSS_HOME\\)\/bin\/pcre-config/ pcre-config/g" /root/cwb/trunk/definitions.mk
+    sed -i -E "s/\s+\\$\\(MINGW_CROSS_HOME\\)\/bin\/pcre-config/ pcre-config/g" /root/cwb/trunk/definitions.mk && \
+    sed -i -E "s/^CFLAGS_ALL\s=/CFLAGS_ALL = -DPCRE_STATIC=-1 -DGLIB_STATIC_COMPILATION/g" /root/cwb/trunk/definitions.mk
     
 RUN sed -i -E "s/^all\\:.*PROGRAMS.$/all: libcqp\\.a/g" /root/cwb/trunk/cqp/Makefile && \
     printf '\nlibcqp.a: $(OBJS) $(CQI_OBJS)\n\t$(RM) $@\n\t$(AR) $@ $^\n' >> /root/cwb/trunk/cqp/Makefile
