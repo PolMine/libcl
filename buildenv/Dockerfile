@@ -1,365 +1,148 @@
-####################################################################### 
-#                                                                     #
-# Generate Environment for cross-compiling the Corpus Workbench (CWB) #
-#                                                                     #
-# NOTE The INSTALL.WIN script in the cwb directory with installation  #
-# files is extremely helpful up to the point where it comes to        # 
-# cross-compiling glib.                                               #
-#                                                                     #
-#######################################################################
+# Intended usage:
+# docker build -t cwbcross:latest --build-arg TARGET=x86_64 .
+# docker run -it --rm -v ~/Lab/github/libcl:/libcl cwbcross:latest
 
-from ubuntu:trusty
+FROM debian:latest
 
-RUN apt-get update && \
-  apt-get -y upgrade && \
-  apt-get install -y wget make mingw-w64 unzip xz-utils subversion git
+RUN apt-get update &&                                                              \
+    apt-get -y upgrade &&                                                          \
+    apt-get install -y wget make mingw-w64 unzip xz-utils subversion git pkg-config bison flex
 
+ENV PCRE_VERSION=8.44
+ENV ICONV_VERSION=1.16
+ENV EXPAT_VERSION=2.4.1
+ENV GETTEXT_VERSION=0.19.8
+ENV LIBFFI_VERSION=3.2
 
-############################ 64bit cross-compilation #################################
+WORKDIR /root
+RUN wget https://ftp.pcre.org/pub/pcre/pcre-$PCRE_VERSION.tar.gz &&                \
+    wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-$ICONV_VERSION.tar.gz &&    \
+    wget http://downloads.sourceforge.net/expat/expat-$EXPAT_VERSION.tar.gz &&     \
+    wget https://ftp.gnu.org/gnu/gettext/gettext-$GETTEXT_VERSION.tar.gz &&        \
+    wget ftp://sourceware.org/pub/libffi/libffi-$LIBFFI_VERSION.tar.gz
 
-# get installation directory for cross-compilation:
+RUN tar xf pcre-$PCRE_VERSION.tar.gz &&                                            \
+    tar xf libiconv-$ICONV_VERSION.tar.gz &&                                       \
+    tar xf expat-$EXPAT_VERSION.tar.gz &&                                          \
+    tar xf gettext-$GETTEXT_VERSION.tar.gz &&                                      \
+    tar xf libffi-$LIBFFI_VERSION.tar.gz 
 
-# ARG MINGW_OUTPUT=`x86_64-w64-mingw32-gcc --print-search-dirs | grep ^install | sed -E 's/install:\s(.*?)/\1/'`
-ENV MINGW_OUTPUT=/usr/lib/gcc/x86_64-w64-mingw32/8.3-win32
-
-# install pcre
-
-RUN cd /root && \
-  wget https://ftp.pcre.org/pub/pcre/pcre-8.44.tar.gz && \ 
-  tar xf pcre-8.44.tar.gz && \
-  cd pcre-8.44 && \
-  CC=x86_64-w64-mingw32-gcc CC_FOR_BUILD=gcc  ./configure    \
-  --host=x86_64-w64-mingw32                                  \
-  --enable-utf8 --enable-unicode-properties --enable-jit     \
-  --enable-newline-is-any --disable-cpp --enable-static      \
-  --disable-dependency-tracking                              \
-  --prefix=${MINGW_OUTPUT}                                     \
-  --exec-prefix=${MINGW_OUTPUT}                                \
-  --libdir=${MINGW_OUTPUT}/lib                                 \
-  --oldincludedir=${MINGW_OUTPUT}/include && \
-  make && \
-  make install
-
-
-# libiconv
-
-RUN cd /root && \
-  wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.15.tar.gz && \
-  tar xf libiconv-1.15.tar.gz && \
-  cd libiconv-1.15 && \
-  CC=x86_64-w64-mingw32-gcc CC_FOR_BUILD=gcc ./configure       \
-  --host=x86_64-w64-mingw32                                    \
-  --enable-static                                              \
-  --prefix=$MINGW_OUTPUT                                       \
-  --exec-prefix=$MINGW_OUTPUT                                  \
-  --libdir=$MINGW_OUTPUT/lib                                 \
-  --oldincludedir=$MINGW_OUTPUT/include && \
-  make && \
-  make install
-
-
-# install expat
-
-RUN cd /root && \
-  wget http://downloads.sourceforge.net/expat/expat-2.1.0.tar.gz && \
-  tar xf expat-2.1.0.tar.gz && \
-  cd expat-2.1.0 && \
-  CC=x86_64-w64-mingw32-gcc CC_FOR_BUILD=gcc ./configure       \
-  --host=x86_64-w64-mingw32                                    \
-  --prefix=$MINGW_OUTPUT                                       \
-  --exec-prefix=$MINGW_OUTPUT                                  \
-  --libdir=$MINGW_OUTPUT/lib                                   \
-  --oldincludedir=$MINGW_OUTPUT/include && \
-  make && \
-  make install
-
-
-# gettext
-
-# RUN cd /root && \
-#  wget http://ftp.gnu.org/pub/gnu/gettext/gettext-0.19.8.1.tar.gz && \
-#  tar xf gettext-0.19.8.1.tar.gz && \
-#  cd gettext-0.19.8.1 && \
-#  CC=x86_64-w64-mingw32-gcc CC_FOR_BUILD=gcc ./configure       \
-#  --host=x86_64-w64-mingw32                                    \
-#  --prefix=$MINGW_OUTPUT                                       \
-#  --exec-prefix=$MINGW_OUTPUT                                  \
-#  --libdir=$MINGW_OUTPUT/lib                                   \
-#  --oldincludedir=$MINGW_OUTPUT && \
-#  make && \
-#  make install
-
-
-### libffi
-
-RUN cd /root && \
-  wget ftp://sourceware.org/pub/libffi/libffi-3.2.tar.gz && \
-  tar xf libffi-3.2.tar.gz && \ 
-  cd libffi-3.2 && \
-  LIBFFI_CFLAGS=$MINGW_OUTPUT/include             \
-  LIBFFI_LIBS=$MINGW_OUTPUT/lib                   \
-  CC=x86_64-w64-mingw32-gcc CC_FOR_BUILD=gcc                            \
-  ./configure                                                           \
-  --host=x86_64-w64-mingw32                                             \
-  --prefix=$MINGW_OUTPUT/                         \
-  --exec-prefix=$MINGW_OUTPUT/                    \
-  --libdir=$MINGW_OUTPUT/lib                                            \
-  --oldincludedir=$MINGW_OUTPUT/include && \
-  make && \
-  make install
+ARG TARGET=i686 # or x86_64 
   
+RUN cd /root/pcre-$PCRE_VERSION &&                                              \
+    CC=$TARGET-w64-mingw32-gcc CC_FOR_BUILD=gcc  ./configure                    \
+      --host=$TARGET-w64-mingw32                                                \
+      --enable-utf8 --enable-unicode-properties --enable-jit                    \
+      --enable-newline-is-any --disable-cpp --enable-static                     \
+      --disable-dependency-tracking                                             \
+      --prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                          \
+      --exec-prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                     \
+      --libdir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//lib                      \
+      --oldincludedir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//include &&        \
+    make && make install && make clean
 
-# glib (download binaries to circumvent difficulties to compile glib)
+RUN cd /root/libiconv-$ICONV_VERSION &&                                         \
+    CC=$TARGET-w64-mingw32-gcc CC_FOR_BUILD=gcc ./configure                     \
+      --host=$TARGET-w64-mingw32                                                \
+      --enable-static                                                           \
+      --prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                          \
+      --exec-prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                     \
+      --libdir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//lib                      \
+      --oldincludedir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//include &&        \
+    make && make install && make clean
+    
+RUN cd /root/expat-$EXPAT_VERSION &&                                            \
+    CC=$TARGET-w64-mingw32-gcc CC_FOR_BUILD=gcc ./configure                     \
+      --host=$TARGET-w64-mingw32                                                \
+      --prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                          \
+      --exec-prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                     \
+      --libdir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//lib                      \
+      --oldincludedir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//include &&        \
+    make && make install && make clean
 
+RUN cd /root/gettext-$GETTEXT_VERSION &&                                        \
+    CC=$TARGET-w64-mingw32-gcc CC_FOR_BUILD=gcc ./configure                     \
+      --enable-static                                                           \
+      --disable-threads                                                         \
+      --host=$TARGET-w64-mingw32                                                \
+      --prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                          \
+      --exec-prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                     \
+      --libdir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//lib                      \
+      --oldincludedir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//include &&        \
+      make && make install && make clean; exit 0
+
+RUN cd /root/libffi-$LIBFFI_VERSION &&                                          \ 
+    LIBFFI_CFLAGS=${MINGW_OUTPUT}/include                                       \
+    LIBFFI_LIBS=${MINGW_OUTPUT}/include                                         \
+    CC=$TARGET-w64-mingw32-gcc CC_FOR_BUILD=gcc                                 \
+    ./configure                                                                 \
+    --host=$TARGET-w64-mingw32                                                  \
+    --prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                            \
+    --exec-prefix=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/                       \
+    --libdir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//lib                        \
+    --oldincludedir=/usr/lib/gcc/$TARGET-mingw32/8.3-win32//include &&          \
+    make && make install && make clean
+
+
+RUN if [ "$TARGET" =  "x86_64" ]; then ARCH=64; else ARCH=32; fi && \
+    cd /opt &&                                                                  \
+    mkdir glib &&                                                               \
+    cd glib &&                                                                  \
+    wget  https://download.gnome.org/binaries/win$ARCH/glib/2.26/glib-dev_2.26.0-1_win$ARCH.zip && \ 
+    unzip glib-dev_2.26.0-1_win$ARCH.zip && \
+    rm glib-dev_2.26.0-1_win$ARCH.zip && \
+    sed -i -E "s/^prefix=.*$/prefix=\/opt\/glib/" /opt/glib/lib/pkgconfig/glib-2.0.pc
+
+WORKDIR /root
 RUN cd /root && \
-  mkdir glib && \
-  cd glib && \
-  wget http://ftp.gnome.org/pub/gnome/binaries/win64/glib/2.26/glib_2.26.0-1_win64.zip && \ 
-  unzip glib_2.26.0-1_win64.zip && \
-  rm glib_2.26.0-1_win64.zip && \
-  cd bin && \
-  cp *.dll $MINGW_OUTPUT/lib/
+    wget https://sourceforge.net/projects/cwb/files/cwb/cwb-3.4-beta/cwb-3.4.22-source.tar.gz && \
+    tar xzfv cwb-3.4.22-source.tar.gz
+    
+WORKDIR /root/cwb-3.4.22
+RUN sed -i -E "s/^PLATFORM=.*$/PLATFORM=mingw-cross/" /root/cwb-3.4.22/config.mk && \
+    sed -i -E "s/^SITE=.*$/SITE=windows-release/" /root/cwb-3.4.22/config.mk && \
+    sed -i -E "s/#\s+CC\s*=\s*.*$/CC=$TARGET-w64-mingw32-gcc/" /root/cwb-3.4.22/config.mk && \
+    sed -i -E 's|#\s+(LIBPCRE_DLL_PATH)\s+=.*$|LIBPCRE_DLL_PATH=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/|g' /root/cwb-3.4.22/config.mk && \
+    sed -i -E "s|#\s+(LIBGLIB_DLL_PATH)\s+=.*$|LIBGLIB_DLL_PATH=/usr/lib/gcc/$TARGET-mingw32/8.3-win32/|" /root/cwb-3.4.22/config.mk
 
+RUN sed -i -E "s/i586-mingw32msvc/$TARGET-w64-mingw32/g" /root/cwb-3.4.22/config/platform/mingw-cross && \
+    sed -i -E "s/i586/$TARGET/" /root/cwb-3.4.22/config/platform/mingw-cross
 
-########################### 32bit Cross-compilation ##################################
+RUN sed -i -E "s/export\s*PKG_CONFIG_PATH=.+MINGW_CROSS_HOME.\/lib\/pkgconfig\s*;//g" /root/cwb-3.4.22/definitions.mk && \
+    sed -i -E "s/\s+\\$\\(MINGW_CROSS_HOME\\)\/bin\/pcre-config/ pcre-config/g" /root/cwb-3.4.22/definitions.mk
+    
+RUN sed -i -E "s/^all\\:.*PROGRAMS.$/all: libcqp\\.a/g" /root/cwb-3.4.22/cqp/Makefile && \
+    printf '\nlibcqp.a: $(OBJS) $(CQI_OBJS)\n\t$(RM) $@\n\t$(AR) $@ $^\n' >> /root/cwb-3.4.22/cqp/Makefile
 
-# ENV MINGW_OUTPUT_32=`i686-w64-mingw32-gcc --print-search-dirs | grep ^install | sed -E 's/install:\s(.*?)/\1/'`
-ENV MINGW_OUTPUT_32=/usr/lib/gcc/i686-w64-mingw32/8.3-win32/
-
-# compile 'pcre'
-
-RUN cd /root/pcre-8.44 && \
-  make clean && \
-  CC=i686-w64-mingw32-gcc CC_FOR_BUILD=gcc  ./configure      \
-  --host=i686-w64-mingw32                                    \
-  --enable-utf8 --enable-unicode-properties --enable-jit     \
-  --enable-newline-is-any --disable-cpp --enable-static      \
-  --prefix=$MINGW_OUTPUT_32                                  \
-  --exec-prefix=$MINGW_OUTPUT_32                             \
-  --libdir=$MINGW_OUTPUT_32/lib                              \
-  --oldincludedir=$MINGW_OUTPUT_32/include && \
-  make && \
-  make install
-
-
-# compile 'iconv'
-
-RUN cd /root/libiconv-1.15 && \
-  make clean && \
-  CC=i686-w64-mingw32-gcc CC_FOR_BUILD=gcc ./configure      \
-  --host=i686-w64-mingw32                                   \
-  --prefix=$MINGW_OUTPUT_32                \
-  --enable-static                                           \
-  --exec-prefix=$MINGW_OUTPUT_32           \
-  --libdir=$MINGW_OUTPUT_32/lib                              \
-  --oldincludedir=$MINGW_OUTPUT_32/include && \
-  make && \
-  make install
-
-
-# compile 'expat'
-
-RUN cd /root/expat-2.1.0 && \
-  make clean && \
-  CC=i686-w64-mingw32-gcc CC_FOR_BUILD=gcc                            \
-  ./configure                                                         \
-  --host=i686-w64-mingw32                                    \
-  --prefix=$MINGW_OUTPUT_32/                \
-  --exec-prefix=$MINGW_OUTPUT_32/           \
-  --libdir=$MINGW_OUTPUT_32/lib                              \
-  --oldincludedir=$MINGW_OUTPUT_32/include && \
-  make && \
-  make install
-
-
-# compile 'liblzma'
-
-RUN cd /root && \
-  wget https://sourceforge.net/projects/lzmautils/files/xz-5.2.5.tar.gz && \
-  tar xzfv xz-5.2.5.tar.gz && \
-  cd xz-5.2.5 && \
-  CC=i686-w64-mingw32-gcc CC_FOR_BUILD=gcc ./configure \
-    --host=i686-w64-mingw32 \
-    --prefix=$MINGW_OUTPUT_32 \
-    --exec-prefix=$MINGW_OUTPUT_32 \
-    --libdir=$MINGW_OUTPUT_32/lib && \
-  make && \
-  make install
-
-
-# compile 'libxml2'
-
-RUN cd /root && \
-  wget ftp://xmlsoft.org/libxml2/libxml2-sources-2.9.7.tar.gz && \
-  tar xf libxml2-sources-2.9.7.tar.gz && \
-  cd libxml2-2.9.7 && \
-  CC=i686-w64-mingw32-gcc CC_FOR_BUILD=gcc                            \
-  ./configure                                                           \
-  --host=i686-w64-mingw32                                    \
-  --prefix=$MINGW_OUTPUT_32/                \
-  --exec-prefix=$MINGW_OUTPUT_32/ \
-  --libdir=$MINGW_OUTPUT_32/lib && \
-  export PATH=$PATH:$MINGW_OUTPUT_32/lib && \
-  make && \
-  make install
-
-
-# compile 'gettext'
-
-# RUN cd /root && \
-#   wget http://ftp.gnu.org/pub/gnu/gettext/gettext-0.19.8.1.tar.gz && \
-#  tar xf gettext-0.19.8.1.tar.gz && \
-#  cd gettext-0.19.8.1 && \
-#  export CFLAGS="$CFLAGS -O2" && \
-#  export CXXFLAGS="$CXXFLAGS -O2" && \
-#  CC=i686-w64-mingw32-gcc CC_FOR_BUILD=gcc ./configure         \
-#  --host=i686-w64-mingw32                                      \
-#  --prefix=$MINGW_OUTPUT_32/                  \
-#  --exec-prefix=$MINGW_OUTPUT_32/             \
-#  --with-libiconv-prefix=$MINGW_OUTPUT_32/lib \
-#  --oldincludedir=$MINGW_OUTPUT_32/include && \
-#  make && \
-#  make install
-
-
-# compile 'libffi'
-
-RUN cd /root && \
-  wget ftp://sourceware.org/pub/libffi/libffi-3.2.tar.gz && \
-  tar xf libffi-3.2.tar.gz && \
-  cd libffi-3.2 && \
-  LIBFFI_CFLAGS=$MINGW_OUTPUT_32/include             \
-  LIBFFI_LIBS=$MINGW_OUTPUT_32/lib                   \
-  CC=i686-w64-mingw32-gcc CC_FOR_BUILD=gcc ./configure                \
-  --host=i686-w64-mingw32                                    \
-  --prefix=$MINGW_OUTPUT_32/                \
-  --exec-prefix=$MINGW_OUTPUT_32/           \
-  --libdir=$MINGW_OUTPUT_32/lib  \
-  --oldincludedir=$MINGW_OUTPUT_32/include && \
-  make && \
-  make install
-  
-
-# compile 'zlib'
-RUN cd /root && \
-  wget http://prdownloads.sourceforge.net/libpng/zlib-1.2.11.tar.gz && \
-  tar xzfv zlib-1.2.11.tar.gz && \
-  cd zlib-1.2.11 && \
-  CC=i686-w64-mingw32-gcc CC_FOR_BUILD=gcc ./configure                \
-  --prefix=$MINGW_OUTPUT_32/                \
-  --libdir=$MINGW_OUTPUT_32/lib  \
-  --includedir=$MINGW_OUTPUT_32/include
-
-# compile 'glib'
-
-# RUN cd /root && \
-#  wget http://ftp.gnome.org/pub/gnome/sources/glib/2.50/glib-2.50.0.tar.xz && \
-#  tar xzfv glib-2.50.0.tar.xz && \
-#  cd glib-2.50.0 && \
-#  export PATH=$PATH:$MINGW_OUTPUT_32/bin && \
-#  CFLAGS="-I$MINGW_OUTPUT_32/include"                \
-#  LIBFFI_CFLAGS=$MINGW_OUTPUT_32/include             \
-#  LIBFFI_LIBS=$MINGW_OUTPUT_32/lib                   \
-#  CC=i686-w64-mingw32-gcc CC_FOR_BUILD=gcc  ./configure               \
-#  --host=i686-w64-mingw32                                    \
-#  --prefix=$MINGW_OUTPUT_32/                \
-#  --exec-prefix=$MINGW_OUTPUT_32/           \
-#  --oldincludedir=$MINGW_OUTPUT_32/include
-
-RUN cd /root && \
-  mkdir glib32 && \
-  cd glib32 && \
-  wget https://download.gnome.org/binaries/win32/glib/2.26/glib_2.26.1-1_win32.zip && \
-  unzip glib_2.26.1-1_win32.zip && \
-  cd bin && \
-  cp *.dll $MINGW_OUTPUT_32/lib/ 
-  
-
-############### libcl #############################
-
-ARG START_FROM_HERE=00002
-
-RUN cd /root && \
-  git clone https://github.com/PolMine/libcl.git && \
-  cd /root/libcl && \
-  git checkout dev
-
-############### utils static library 64 bit ########################
+ENV PKG_CONFIG_PATH=/opt/glib/lib/pkgconfig  
+RUN export PKG_CONFIG_PATH=/opt/glib/lib/pkgconfig && \
+    export PATH=$PATH:/usr/lib/gcc/$TARGET-mingw32/8.3-win32/bin/ && \
+    make clean && make depend && make cqp && make cl
 
 
 RUN cd /root && \
-  git clone https://github.com/PolMine/RcppCWB.git && \
-  cd /root/RcppCWB && \
-  git checkout dev && \
-  git pull origin dev
-  
-WORKDIR /root/RcppCWB/src/cwb/utils
+    git clone https://github.com/PolMine/RcppCWB.git && \
+    cd /root/RcppCWB && \
+    git checkout dev && \
+    git pull origin dev
 
-RUN x86_64-w64-mingw32-gcc -c -o _cwb_huffcode.o -O2 -Wall -static  \
-  -D__MINGW__ -DEMULATE_SETENV -DG_OS_WIN32                                       \
-  -I/root/RcppCWB/src/cwb/cl                                                   \
-  -I/usr/share/mingw-w64/include \
-  -I$MINGW_OUTPUT/include                                      \
-  _cwb_huffcode.c
+RUN cd /root/RcppCWB/src/cwb/utils &&                                                                      \
+    for FILE in _cwb_huffcode _cwb_compress_rdx _cwb_encode _cwb_makeall; do                               \
+      $TARGET-w64-mingw32-gcc -c -o $FILE.o -O2 -Wall -static                                              \
+        -D__MINGW__ -DEMULATE_SETENV -DG_OS_WIN32                                                          \
+        -I/root/RcppCWB/src/cwb/cl -I/usr/share/mingw-w64/include -I$MINGW_OUTPUT/include                  \
+        $FILE.c;                                                                                           \
+    done &&                                                                                                \
+    $TARGET-w64-mingw32-ar cq libcwb.a _cwb_makeall.o _cwb_huffcode.o _cwb_compress_rdx.o _cwb_encode.o && \
+    $TARGET-w64-mingw32-ranlib libcwb.a
+    
+RUN cd /root && \
+    git clone https://github.com/PolMine/libcl.git && \
+    cd /root/libcl && \
+    git checkout dev
 
-RUN x86_64-w64-mingw32-gcc -c -o _cwb_compress_rdx.o -O2 -Wall -static  \
-  -D__MINGW__ -DEMULATE_SETENV -DG_OS_WIN32                                       \
-  -I/root/RcppCWB/src/cwb/cl \
-  -I$MINGW_OUTPUT/include                                      \
-  _cwb_compress_rdx.c
+CMD if [ "$TARGET" =  "x86_64" ]; then export ARCHDIR=x64; else export ARCHDIR=i386; fi && \
+    cp /root/cwb-3.4.22/cl/libcl.a /libcl/lib/$ARCHDIR/libcl.a &&                         \
+    cp /root/cwb-3.4.22/cqp/libcqp.a /libcl/lib/$ARCHDIR/libcqp.a &&                      \
+    cp /root/RcppCWB/src/cwb/utils/libcwb.a /libcl/lib/$ARCHDIR/libcwb.a
 
-RUN x86_64-w64-mingw32-gcc -c -o _cwb_encode.o -O2 -Wall -static  \
-  -D__MINGW__ -DEMULATE_SETENV -DG_OS_WIN32                                       \
-  -I/root/RcppCWB/src/cwb/cl \
-  -I$MINGW_OUTPUT/include                                      \
-  _cwb_encode.c
-
-RUN x86_64-w64-mingw32-gcc -c -o _cwb_makeall.o -O2 -Wall -static  \
-  -D__MINGW__ -DEMULATE_SETENV -DG_OS_WIN32                                       \
-  -I/root/RcppCWB/src/cwb/cl                                                   \
-  -I/usr/share/mingw-w64/include \
-  -I$MINGW_OUTPUT/include                                      \
-  _cwb_makeall.c
-  
-RUN x86_64-w64-mingw32-ar cq libcwb.a _cwb_makeall.o _cwb_huffcode.o _cwb_compress_rdx.o _cwb_encode.o && \
-  x86_64-w64-mingw32-ranlib libcwb.a
-
-RUN cp /root/RcppCWB/src/cwb/utils/libcwb.a /root/libcl/lib/x64/libcwb.a
-
-RUN cd /root/RcppCWB && git clean -f
-
-
-################ utils static library 32 bit
-
-WORKDIR /root/RcppCWB/src/cwb/utils
-
-RUN i686-w64-mingw32-gcc -c -o _cwb_huffcode.o -O2 -Wall -static  \
-  -D__MINGW__ -DEMULATE_SETENV -DG_OS_WIN32                                       \
-  -I/root/RcppCWB/src/cwb/cl                                                   \
-  -I$MINGW_OUTPUT/include                                      \
-  _cwb_huffcode.c
-
-RUN i686-w64-mingw32-gcc -c -o _cwb_compress_rdx.o -O2 -Wall -static  \
-  -D__MINGW__ -DEMULATE_SETENV -DG_OS_WIN32                                       \
-  -I/root/RcppCWB/src/cwb/cl \
-  -I$MINGW_OUTPUT/include                                      \
-  _cwb_compress_rdx.c
-
-RUN i686-w64-mingw32-gcc -c -o _cwb_encode.o -O2 -Wall -static  \
-  -D__MINGW__ -DEMULATE_SETENV -DG_OS_WIN32                                       \
-  -I/root/RcppCWB/src/cwb/cl \
-  -I$MINGW_OUTPUT/include                                      \
-  _cwb_encode.c
-
-RUN i686-w64-mingw32-gcc -c -o _cwb_makeall.o -O2 -Wall -static  \
-  -D__MINGW__ -DEMULATE_SETENV -DG_OS_WIN32                                       \
-  -I/root/RcppCWB/src/cwb/cl                                                   \
-  -I$MINGW_OUTPUT/include                                      \
-  _cwb_makeall.c
-  
-RUN i686-w64-mingw32-ar cq libcwb.a _cwb_makeall.o _cwb_huffcode.o _cwb_compress_rdx.o _cwb_encode.o && \
-  i686-w64-mingw32-ranlib libcwb.a
-
-RUN cp /root/RcppCWB/src/cwb/utils/libcwb.a /root/libcl/lib/i386/libcwb.a
-
-RUN cd /root/RcppCWB && git clean -f
