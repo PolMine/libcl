@@ -124,6 +124,56 @@ RUN for file in $(ls /root/cwb/trunk/cqp/*.c); do sed -i '1i #define printf(...)
 RUN for file in $(ls /root/cwb/trunk/CQi/*.c); do sed -i '1i #define printf(...) Rprintf(__VA_ARGS__)' $file; done
 RUN sed -i -E 's/putchar/Rprintf/g' /root/cwb/trunk/cqp/regex2dfa.c
 
+RUN cd /root/cwb/trunk/cl && \
+    for file in $(ls *.{c,y}); do \
+      cat $file | \
+      sed -E 's/vfprintf\s*.\s*stderr,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*stderr,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*stream,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*outfd,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*fd,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*File,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*rd->stream,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*redir->stream,/Rprintf(/g' \
+      > $file-E  \
+      mv $file-E $file; \
+    done
+
+RUN cd /root/cwb/trunk/cqp && \
+    for file in $(ls *.{c,y}); do \
+      cat $file | \
+      sed -E 's/vfprintf\s*.\s*stderr,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*stderr,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*stream,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*outfd,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*fd,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*File,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*rd->stream,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*redir->stream,/Rprintf(/g' | \
+      sed -E 's/#define\sYYFPRINTF\sfprintf/#define YYFPRINTF Rprintf/g' | \
+      sed -E 's/YYFPRINTF\s*.\s*stderr,/YYFPRINTF (/g' | \
+      sed -E 's/YYFPRINTF\s*.\s*yyoutput,/YYPRINTF (/g' | \
+      sed -E 's/YYDPRINTF\s..stderr,/YYDPRINTF ((/g' \
+      > $file-E  \
+      mv $file-E $file; \
+    done
+
+RUN cd /root/cwb/trunk/CQi && \
+    for file in $(ls *.c); do \
+      cat $file | \
+      sed -E 's/vfprintf\s*.\s*stderr,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*stderr,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*stream,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*outfd,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*fd,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*File,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*rd->stream,/Rprintf(/g' | \
+      sed -E 's/fprintf\s*.\s*redir->stream,/Rprintf(/g' \
+      > $file-E ; \
+    done
+RUN cd /root/cwb/trunk/CQi && rm *.c && rename 's/\.c-E/.c/' *.c-E
+
+
 ENV PKG_CONFIG_PATH=/opt/glib/lib/pkgconfig  
 RUN export PKG_CONFIG_PATH=/opt/glib/lib/pkgconfig && \
     export PATH=$PATH:$MINGWDIR/bin/ && \
