@@ -119,12 +119,16 @@ RUN sed -i -E "s/export\s*PKG_CONFIG_PATH=.+MINGW_CROSS_HOME.\/lib\/pkgconfig\s*
 RUN sed -i -E "s/^all\\:.*PROGRAMS.$/all: libcqp\\.a/g" /root/cwb/trunk/cqp/Makefile && \
     printf '\nlibcqp.a: $(OBJS) $(CQI_OBJS)\n\t$(RM) $@\n\t$(AR) $@ $^\n' >> /root/cwb/trunk/cqp/Makefile
 
+RUN for file in $(ls /root/cwb/trunk/cl/*.c); do sed -i '1i #define printf(...) Rprintf(__VA_ARGS__)' $file; done
+RUN for file in $(ls /root/cwb/trunk/cqp/*.c); do sed -i '1i #define printf(...) Rprintf(__VA_ARGS__)' $file; done
+RUN for file in $(ls /root/cwb/trunk/CQi/*.c); do sed -i '1i #define printf(...) Rprintf(__VA_ARGS__)' $file; done
+
 ENV PKG_CONFIG_PATH=/opt/glib/lib/pkgconfig  
 RUN export PKG_CONFIG_PATH=/opt/glib/lib/pkgconfig && \
     export PATH=$PATH:$MINGWDIR/bin/ && \
     make clean && make depend && make cqp && make cl
 
-ARG RCPPCWB_BUILD=0001
+ARG RCPPCWB_BUILD=0002
 RUN cd /root && \
     git clone https://github.com/PolMine/RcppCWB.git && \
     cd /root/RcppCWB && \
@@ -140,11 +144,6 @@ RUN cd /root/RcppCWB/src/cwb/utils &&                                           
     done &&                                                                                                \
     $TARGET-w64-mingw32-ar cq libcwb.a _cwb_makeall.o _cwb_huffcode.o _cwb_compress_rdx.o _cwb_encode.o && \
     $TARGET-w64-mingw32-ranlib libcwb.a
-    
-RUN cd /root && \
-    git clone https://github.com/PolMine/libcl.git && \
-    cd /root/libcl && \
-    git checkout dev
 
 CMD if [ "$TARGET" =  "x86_64" ]; then export ARCHDIR=x64; else export ARCHDIR=i386; fi && \
     cp /root/cwb/trunk/cl/libcl.a /libcl/lib/$ARCHDIR/libcl.a &&                         \
