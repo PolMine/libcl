@@ -122,6 +122,7 @@ RUN sed -i -E "s/^all\\:.*PROGRAMS.$/all: libcqp\\.a/g" /root/cwb/trunk/cqp/Make
 RUN for file in $(ls /root/cwb/trunk/cl/*.c); do sed -i '1i #define printf(...) Rprintf(__VA_ARGS__)' $file; done
 RUN for file in $(ls /root/cwb/trunk/cqp/*.c); do sed -i '1i #define printf(...) Rprintf(__VA_ARGS__)' $file; done
 RUN for file in $(ls /root/cwb/trunk/CQi/*.c); do sed -i '1i #define printf(...) Rprintf(__VA_ARGS__)' $file; done
+RUN sed -i -E 's/putchar/Rprintf/g' /root/cwb/trunk/cqp/regex2dfa.c
 
 ENV PKG_CONFIG_PATH=/opt/glib/lib/pkgconfig  
 RUN export PKG_CONFIG_PATH=/opt/glib/lib/pkgconfig && \
