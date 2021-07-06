@@ -124,7 +124,7 @@ RUN export PKG_CONFIG_PATH=/opt/glib/lib/pkgconfig && \
     export PATH=$PATH:$MINGWDIR/bin/ && \
     make clean && make depend && make cqp && make cl
 
-
+ARG RCPPCWB_BUILD=0001
 RUN cd /root && \
     git clone https://github.com/PolMine/RcppCWB.git && \
     cd /root/RcppCWB && \
