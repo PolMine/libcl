@@ -6,6 +6,7 @@ do
   echo $ARCH
   docker build \
     -t cwbcross:$ARCH \
+    --no-cache \
     --build-arg TARGET=$ARCH \
     --build-arg MINGWDIR=/usr/lib/gcc/$ARCH-w64-mingw32/4.8/ \
     .

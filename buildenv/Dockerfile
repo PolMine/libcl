@@ -23,17 +23,6 @@ RUN tar xf pcre-$PCRE_VERSION.tar.gz &&                                         
     tar xf gettext-$GETTEXT_VERSION.tar.gz &&                                      \
     tar xf libffi-$LIBFFI_VERSION.tar.gz 
 
-RUN cd /root && \
-    mkdir cwb && \
-    cd cwb && \
-    svn checkout http://svn.code.sf.net/p/cwb/code/cwb/trunk; exit 0
-RUN cd /root/cwb/trunk && \
-    svn cleanup && \
-    svn up 
-RUN cd /root/cwb/trunk && \
-    svn cleanup && \
-    svn up -r1074 
-
 ARG TARGET=x86_64 # or i686
 # Snippet: MINGW_OUTPUT_TMP=`x86_64-w64-mingw32-gcc --print-search-dirs | grep ^install`; echo ${MINGW_OUTPUT_TMP:9}
 ARG MINGWDIR=/usr/lib/gcc/x86_64-w64-mingw32/4.8/
@@ -102,6 +91,17 @@ RUN if [ "$TARGET" =  "x86_64" ]; then ARCH=64; else ARCH=32; fi && \
     rm glib-dev_2.26.0-1_win$ARCH.zip && \
     sed -i -E "s/^prefix=.*$/prefix=\/opt\/glib/" /opt/glib/lib/pkgconfig/glib-2.0.pc
 
+RUN cd /root && \
+    mkdir cwb && \
+    cd cwb && \
+    svn checkout http://svn.code.sf.net/p/cwb/code/cwb/trunk; exit 0
+RUN cd /root/cwb/trunk && \
+    svn cleanup && \
+    svn up 
+RUN cd /root/cwb/trunk && \
+    svn cleanup && \
+    svn up -r1074 
+
 WORKDIR /root/cwb/trunk
 RUN sed -i -E "s/^PLATFORM=.*$/PLATFORM=mingw-cross/" /root/cwb/trunk/config.mk && \
     sed -i -E "s/^SITE=.*$/SITE=windows-release/" /root/cwb/trunk/config.mk && \
@@ -124,58 +124,60 @@ RUN for file in $(ls /root/cwb/trunk/cqp/*.c); do sed -i '1i #define printf(...)
 RUN for file in $(ls /root/cwb/trunk/CQi/*.c); do sed -i '1i #define printf(...) Rprintf(__VA_ARGS__)' $file; done
 RUN sed -i -E 's/putchar/Rprintf/g' /root/cwb/trunk/cqp/regex2dfa.c
 
+ARG REWORK=05
+
 RUN cd /root/cwb/trunk/cl && \
-    for file in $(ls *.{c,y}); do \
-      cat $file | \
-      sed -E 's/vfprintf\s*.\s*stderr,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*stderr,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*stream,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*outfd,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*fd,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*File,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*rd->stream,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*redir->stream,/Rprintf(/g' \
-      > $file-E  \
-      mv $file-E $file; \
-    done
+    for file in $(ls *.{c,y}); do sed -E -i 's/vfprintf\s*.\s*stderr,/Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/fprintf\s*.\s*stderr,/Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/fprintf\s*.\s*stream,/Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/fprintf\s*.\s*stdout,/Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/fprintf\s*.\s*outfd,/Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/fprintf\s*.\s*fd,/Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/fprintf\s*.\s*File,/Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/fprintf\s*.\s*rd->stream,/Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/fprintf\s*.\s*redir->stream,/Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/YYFPRINTF\s*.\s*stderr,/YYFPRINTF (/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/YYFPRINTF\s*.\s*yyoutput,/YYPRINTF (/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/YYDPRINTF\s..stderr,/YYDPRINTF ((/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/fprintf./Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/stderr,//g' $file; done && \
+    for file in $(ls *.c); do sed -E -i 's/#\s+define\s+YYFPRINTF\s+fprintf/# define YYFPRINTF Rprintf/g' $file; done
 
 RUN cd /root/cwb/trunk/cqp && \
-    for file in $(ls *.{c,y}); do \
-      cat $file | \
-      sed -E 's/vfprintf\s*.\s*stderr,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*stderr,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*stream,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*outfd,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*fd,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*File,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*rd->stream,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*redir->stream,/Rprintf(/g' | \
-      sed -E 's/#define\sYYFPRINTF\sfprintf/#define YYFPRINTF Rprintf/g' | \
-      sed -E 's/YYFPRINTF\s*.\s*stderr,/YYFPRINTF (/g' | \
-      sed -E 's/YYFPRINTF\s*.\s*yyoutput,/YYPRINTF (/g' | \
-      sed -E 's/YYDPRINTF\s..stderr,/YYDPRINTF ((/g' \
-      > $file-E  \
-      mv $file-E $file; \
-    done
+    for file in $(ls *.{c,y}); do sed -E -i 's/vfprintf\s*.\s*stderr,/Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/fprintf\s*.\s*stderr,/Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/fprintf\s*.\s*stream,/Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/fprintf\s*.\s*stdout,/Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/fprintf\s*.\s*outfd,/Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/fprintf\s*.\s*fd,/Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/fprintf\s*.\s*File,/Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/fprintf\s*.\s*rd->stream,/Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/fprintf\s*.\s*redir->stream,/Rprintf(/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/YYFPRINTF\s*.\s*stderr,/YYFPRINTF (/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/YYFPRINTF\s*.\s*yyoutput,/YYPRINTF (/g' $file; done && \
+    for file in $(ls *.{c,y}); do sed -E -i 's/YYDPRINTF\s..stderr,/YYDPRINTF ((/g' $file; done && \
+    for file in $(ls *.c); do sed -E -i 's/#\s+define\s+YYFPRINTF\s+fprintf/# define YYFPRINTF Rprintf/g' $file; done
 
 RUN cd /root/cwb/trunk/CQi && \
-    for file in $(ls *.c); do \
-      cat $file | \
-      sed -E 's/vfprintf\s*.\s*stderr,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*stderr,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*stream,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*outfd,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*fd,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*File,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*rd->stream,/Rprintf(/g' | \
-      sed -E 's/fprintf\s*.\s*redir->stream,/Rprintf(/g' \
-      > $file-E ; \
-    done
-RUN cd /root/cwb/trunk/CQi && rm *.c && rename 's/\.c-E/.c/' *.c-E
+    for file in $(ls *.c); do sed -E -i 's/vfprintf\s*.\s*stderr,/Rprintf(/g' $file; done && \
+    for file in $(ls *.c); do sed -E -i 's/fprintf\s*.\s*stderr,/Rprintf(/g' $file; done && \
+    for file in $(ls *.c); do sed -E -i 's/fprintf\s*.\s*stream,/Rprintf(/g' $file; done && \
+    for file in $(ls *.c); do sed -E -i 's/fprintf\s*.\s*stdout,/Rprintf(/g' $file; done && \
+    for file in $(ls *.c); do sed -E -i 's/fprintf\s*.\s*outfd,/Rprintf(/g' $file; done && \
+    for file in $(ls *.c); do sed -E -i 's/fprintf\s*.\s*fd,/Rprintf(/g' $file; done && \
+    for file in $(ls *.c); do sed -E -i 's/fprintf\s*.\s*File,/Rprintf(/g' $file; done && \
+    for file in $(ls *.c); do sed -E -i 's/fprintf\s*.\s*rd->stream,/Rprintf(/g' $file; done && \
+    for file in $(ls *.c); do sed -E -i 's/fprintf\s*.\s*redir->stream,/Rprintf(/g' $file; done && \
+    for file in $(ls *.c); do sed -E -i 's/YYFPRINTF\s*.\s*stderr,/YYFPRINTF (/g' $file; done && \
+    for file in $(ls *.c); do sed -E -i 's/YYFPRINTF\s*.\s*yyoutput,/YYPRINTF (/g' $file; done && \
+    for file in $(ls *.c); do sed -E -i 's/YYDPRINTF\s..stderr,/YYDPRINTF ((/g' $file; done
+
+
 
 
 ENV PKG_CONFIG_PATH=/opt/glib/lib/pkgconfig  
-RUN export PKG_CONFIG_PATH=/opt/glib/lib/pkgconfig && \
+RUN cd /root/cwb/trunk/ && \
+    export PKG_CONFIG_PATH=/opt/glib/lib/pkgconfig && \
     export PATH=$PATH:$MINGWDIR/bin/ && \
     make clean && make depend && make cqp && make cl
 
@@ -201,3 +203,4 @@ CMD if [ "$TARGET" =  "x86_64" ]; then export ARCHDIR=x64; else export ARCHDIR=i
     cp /root/cwb/trunk/cqp/libcqp.a /libcl/lib/$ARCHDIR/libcqp.a &&                      \
     cp /root/RcppCWB/src/cwb/utils/libcwb.a /libcl/lib/$ARCHDIR/libcwb.a
 
+  
