@@ -141,7 +141,7 @@ RUN cd /root/cwb/trunk/cl && \
     for file in $(ls *.{c,y}); do sed -E -i 's/YYDPRINTF\s..stderr,/YYDPRINTF ((/g' $file; done && \
     for file in $(ls *.{c,y}); do sed -E -i 's/fprintf./Rprintf(/g' $file; done && \
     for file in $(ls *.{c,y}); do sed -E -i 's/stderr,//g' $file; done && \
-    for file in $(ls *.{c,y}); do sed -E -i 's/#\s+define\s+YYFPRINTF\s+fprintf/# define YYFPRINTF Rprintf/g' $file; done
+    for file in $(ls *.{c,y}); do sed -E -i 's/#  define YYFPRINTF fprintf/# define YYFPRINTF Rprintf/g' $file; done
 
 RUN cd /root/cwb/trunk/cqp && \
     for file in $(ls *.{c,y}); do sed -E -i 's/vfprintf\s*.\s*stderr,/Rprintf(/g' $file; done && \
