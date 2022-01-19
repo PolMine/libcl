@@ -4,14 +4,14 @@ RUN apt-get update &&                                                           
     apt-get -y upgrade &&                                                          \
     apt-get install -y wget make mingw-w64 unzip xz-utils subversion git pkg-config bison flex
 
-ENV PCRE_VERSION=8.44
+ENV PCRE_VERSION=8.45
 ENV ICONV_VERSION=1.16
 ENV EXPAT_VERSION=2.4.1
 ENV GETTEXT_VERSION=0.19.8
 ENV LIBFFI_VERSION=3.2
 
 WORKDIR /root
-RUN wget https://ftp.pcre.org/pub/pcre/pcre-$PCRE_VERSION.tar.gz &&                \
+RUN https://sourceforge.net/projects/pcre/files/pcre/$PCRE_VERSION/pcre-$PCRE_VERSION.tar.bz2 && \
     wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-$ICONV_VERSION.tar.gz &&    \
     wget http://downloads.sourceforge.net/expat/expat-$EXPAT_VERSION.tar.gz &&     \
     wget https://ftp.gnu.org/gnu/gettext/gettext-$GETTEXT_VERSION.tar.gz &&        \
