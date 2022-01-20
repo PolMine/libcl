@@ -123,7 +123,7 @@ RUN sed -i -E "s/(.define\sIPAddress\s267)//" /root/RcppCWB/src/cwb/cqp/parser.t
 RUN cd /root/RcppCWB/src/cwb && \
     export PKG_CONFIG_PATH=/opt/glib/lib/pkgconfig && \
     export PATH=$PATH:$MINGWDIR/bin/ && \
-    make clean && make depend && make cl
+    make clean && make depend && make cl && make cqp && make utils
     
 CMD if [ "$TARGET" =  "x86_64" ]; then export ARCHDIR=x64; else export ARCHDIR=i386; fi && \
     cp /root/RcppCWB/src/cwb/cl/libcl.a /libcl/lib/$ARCHDIR/libcl.a &&                         \
