@@ -1,33 +1,19 @@
-/*
- *  IMS Open Corpus Workbench (CWB)
- *  Copyright (C) 1993-2006 by IMS, University of Stuttgart
- *  Copyright (C) 2007-     by the respective contributers (see file AUTHORS)
- *
- *  This program is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License as published by the
- *  Free Software Foundation; either version 2, or (at your option) any later
- *  version.
- *
- *  This program is distributed in the hope that it will be useful, but
- *  WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
- *  Public License for more details (in the file "COPYING", or available via
- *  WWW at http://www.gnu.org/copyleft/gpl.html).
- */
-
-#ifndef _cqp_eval_h_
-#define _cqp_eval_h_
-
-
-#include "regex2dfa.h"
+/** Number of AVStructures each Patternlist can store. */
 #include "corpmanag.h"
 #include "symtab.h"
-#include "options.h"
 
-
-#define repeat_inf  -1  /**< constant which indicates 'infinite repetition' (actually, repetition up to hard_boundary) @see hard_boundary */
-#define repeat_none -2  /**< constant which indicates 'no repetition'       */
-
+typedef struct dfa {
+  int Max_States;         /**< max number of states of the current dfa;
+  state no. 0 is the initial state.             */
+    int Max_Input;          /**< max number of input chars of the current dfa. */
+    int **TransTable;       /**< state transition table of the current dfa.    */
+    Boolean *Final;         /**< set of final states.                          */
+    int E_State;            /**< Error State -- it is introduced in order to
+  *   make the dfa complete, so the state transition
+  *   is a total mapping. The value of this variable
+  *   is Max_States.
+  */
+} DFA;
 /** Number of AVStructures each Patternlist can store. */
 #define MAXPATTERNS 5000
 
@@ -516,7 +502,7 @@ extern EEP evalenv;
 
 /* ---------------------------------------------------------------------- */
 
-Boolean eval_bool(Constrainttree ctptr, RefTab rt, int corppos);
+
 
 /* ==================== the three query types */
 
@@ -537,4 +523,4 @@ void show_environment(int thisenv);
 
 void free_all_environments(void);
 
-#endif
+
