@@ -94,8 +94,8 @@ ARG RCPPCWB_BUILD=0002
 RUN cd /root && \
     git clone https://github.com/PolMine/RcppCWB.git && \
     cd /root/RcppCWB && \
-    git checkout dev && \
-    git pull origin dev
+    git checkout win && \
+    git pull origin win
 
 WORKDIR /root/RcppCWB/src/cwb
 
