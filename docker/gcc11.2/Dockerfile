@@ -16,7 +16,7 @@ RUN yum install -y wget make unzip xz bzip2 git pkg-config bison flex
 # static libraries are available out of the box!
 RUN yum install -y mingw64-gcc mingw64-pcre-static mingw64-gettext-static mingw64-expat-static mingw64-libffi-static mingw64-glib2-static
 
-ENV ICONV_VERSION=1.16 # latest version as of 2022-01-25
+ENV ICONV_VERSION=1.16
 ENV PKG_CONFIG_PATH=/usr/x86_64-w64-mingw32/sys-root/mingw/lib/pkgconfig
 ENV MINGWDIR=/usr/lib/gcc/x86_64-w64-mingw32/11.2.1/
 ENV LIBDIR=/usr/x86_64-w64-mingw32/sys-root/mingw/lib
@@ -38,12 +38,12 @@ RUN wget --no-check-certificate https://ftp.gnu.org/pub/gnu/libiconv/libiconv-$I
     make && make install && make clean
   
 # re-setting RCPPCWB_BUILD can be used to trigger re-building docker from here if RcppCWB code has changed  
-ARG RCPPCWB_BUILD=0002
+ARG RCPPCWB_BUILD=0004
 RUN cd /root && \
     git clone https://github.com/PolMine/RcppCWB.git && \
     cd /root/RcppCWB && \
-    git checkout ucrt && \
-    git pull origin ucrt
+    git checkout dev && \
+    git pull origin dev
 
 WORKDIR /root/RcppCWB/src/cwb
 
@@ -73,7 +73,7 @@ RUN sed -i -E "s/^TOP\s=\s\\$\\(R_PACKAGE_SOURCE\\)/TOP = \/root\/RcppCWB\/src\/
     sed -i -E "s/^TOP\s=\s\\$\\(R_PACKAGE_SOURCE\\)/TOP = \/root\/RcppCWB\/src\/cwb/g" ./cqp/Makefile && \
     sed -i -E "s/^TOP\s=\s\\$\\(R_PACKAGE_SOURCE\\)/TOP = \/root\/RcppCWB\/src\/cwb/g" ./utils/Makefile
 
-RUN make clean && make depend && make cl && make cqp && make utils
+# RUN make clean && make depend && make cl && make cqp && make utils
     
 # CMD if [ "x86_64" =  "x86_64" ]; then export ARCHDIR=x64; else export ARCHDIR=i386; fi && \
 #    cp /root/RcppCWB/src/cwb/cl/libcl.a /libcl/lib/$ARCHDIR/libcl.a &&                         \
