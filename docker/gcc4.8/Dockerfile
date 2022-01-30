@@ -94,8 +94,8 @@ ARG RCPPCWB_BUILD=0002
 RUN cd /root && \
     git clone https://github.com/PolMine/RcppCWB.git && \
     cd /root/RcppCWB && \
-    git checkout win && \
-    git pull origin win
+    git checkout dev && \
+    git pull origin dev
 
 WORKDIR /root/RcppCWB/src/cwb
 
@@ -103,16 +103,20 @@ RUN sed -i -E "s/^PLATFORM=.*$/PLATFORM=mingw-cross/" config.mk && \
     sed -i -E "s/^SITE=.*$/SITE=windows-release/" config.mk && \
     sed -i -E "s/#\s+CC\s*=\s*.*$/CC=$TARGET-w64-mingw32-gcc/" config.mk && \
     sed -i -E 's|#\s+(LIBPCRE_DLL_PATH)\s+=.*$|LIBPCRE_DLL_PATH=$MINGWDIR/|g' config.mk && \
-    sed -i -E "s|#\s+(LIBGLIB_DLL_PATH)\s+=.*$|LIBGLIB_DLL_PATH=$MINGWDIR/|g" config.mk
+    sed -i -E "s|#\s+(LIBGLIB_DLL_PATH)\s+=.*$|LIBGLIB_DLL_PATH=$MINGWDIR/|g" config.mk && \
+    sed -i -E "s/^CC\s=\sgcc\s*/#CC = gcc/" config.mk
 
 RUN sed -i -E "s/i586-mingw32msvc/$TARGET-w64-mingw32/g" /root/RcppCWB/src/cwb/config/platform/mingw-cross && \
     sed -i -E "s/i586/$TARGET/" /root/RcppCWB/src/cwb/config/platform/mingw-cross && \
     sed -i -E "s/^AR\s=\s(.*?)\scq/AR = \1/" /root/RcppCWB/src/cwb/config/platform/mingw-cross
-
+    
 RUN sed -i -E "s/export\s*PKG_CONFIG_PATH=.+MINGW_CROSS_HOME.\/lib\/pkgconfig\s*;//g" definitions.mk && \
     sed -i -E "s/\s+\\$\\(MINGW_CROSS_HOME\\)\/bin\/pcre-config/ pcre-config/g" definitions.mk && \
-    sed -i -E "s/^CFLAGS_ALL\s=/CFLAGS_ALL = -DPCRE_STATIC=-1 -DGLIB_STATIC_COMPILATION/g" definitions.mk
-    
+    sed -i -E "s/^CFLAGS_ALL\s=/CFLAGS_ALL = -DPCRE_STATIC=-1 -DGLIB_STATIC_COMPILATION/g" definitions.mk && \
+    sed -i -E "s/^#PCRE_DEFINES/PCRE_DEFINES/" definitions.mk && \
+    sed -i -E "s/^#GLIB_DEFINES/GLIB_DEFINES/" definitions.mk && \
+    sed -i -E "s/PCRE_DEFINES\s:=\s-DPCRE_STATIC//" definitions.mk
+
 RUN sed -i -E "s/^TOP\s=\s\\$\\(R_PACKAGE_SOURCE\\)/TOP = \/root\/RcppCWB\/src\/cwb/g" /root/RcppCWB/src/cwb/Makefile && \
     sed -i -E "s/^TOP\s=\s\\$\\(R_PACKAGE_SOURCE\\)/TOP = \/root\/RcppCWB\/src\/cwb/g" /root/RcppCWB/src/cwb/cl/Makefile && \
     sed -i -E "s/^TOP\s=\s\\$\\(R_PACKAGE_SOURCE\\)/TOP = \/root\/RcppCWB\/src\/cwb/g" /root/RcppCWB/src/cwb/cqp/Makefile && \
