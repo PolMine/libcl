@@ -90,7 +90,7 @@ RUN if [ "$TARGET" =  "x86_64" ]; then ARCH=64; else ARCH=32; fi && \
     sed -i -E "s/^prefix=.*$/prefix=\/opt\/glib/" /opt/glib/lib/pkgconfig/glib-2.0.pc
 
 
-ARG RCPPCWB_BUILD=0002
+ARG RCPPCWB_BUILD=0003
 RUN cd /root && \
     git clone https://github.com/PolMine/RcppCWB.git && \
     cd /root/RcppCWB && \
