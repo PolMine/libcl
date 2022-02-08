@@ -60,6 +60,7 @@ RUN cd /root/expat-$EXPAT_VERSION &&                                            
 RUN cd /root/gettext-$GETTEXT_VERSION &&                                        \
     CC=$TARGET-w64-mingw32-gcc CC_FOR_BUILD=gcc ./configure                     \
       --enable-static                                                           \
+      --enable-shared \
       --disable-threads                                                         \
       --host=$TARGET-w64-mingw32                                                \
       --prefix=$MINGWDIR                          \
@@ -90,7 +91,7 @@ RUN if [ "$TARGET" =  "x86_64" ]; then ARCH=64; else ARCH=32; fi && \
     sed -i -E "s/^prefix=.*$/prefix=\/opt\/glib/" /opt/glib/lib/pkgconfig/glib-2.0.pc
 
 
-ARG RCPPCWB_BUILD=0004
+ARG RCPPCWB_BUILD=0005
 RUN cd /root && \
     git clone https://github.com/PolMine/RcppCWB.git && \
     cd /root/RcppCWB && \
